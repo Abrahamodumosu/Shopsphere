@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Store</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+        }
+        .admin-btn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .admin-btn:hover {
+            background-color: #0056b3;
+        }
+        .search-bar {
+            margin: 20px auto;
+            width: 50%;
+        }
+        .search-bar input {
+            width: 80%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .store-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            justify-content: center;
+            padding: 10px;
+        }
+        .product {
+            border: 1px solid #ddd;
+            padding: 10px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .product img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+        }
+        .cart {
+            margin-top: 20px;
+            border-top: 2px solid #000;
+            padding-top: 10px;
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            display: inline-block;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .admin-panel, .cookie-banner, .profile-form {
+            display: none;
+        }
+        .cookie-banner {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: #333;
+            color: white;
+            padding: 10px;
+            text-align: center;
+        }
+        .cookie-banner button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+        .cookie-banner button:hover {
+            background-color: #0056b3;
+        }
+        .profile-form {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome to Our Store</h1>
+    <button class="admin-btn" onclick="openAdminPage()">Admin Page</button>
+    
+    <div class="search-bar">
+        <input type="text" id="search-input" placeholder="Search products..." onkeyup="searchProducts()">
+    </div>
+
+    <div class="admin-panel" id="admin-panel">
+        <h2>Admin Panel</h2>
+        <input type="text" id="product-name" placeholder="Product Name">
+        <input type="number" id="product-price" placeholder="Product Price">
+        <input type="text" id="product-image" placeholder="Product Image URL">
+        <button onclick="addProduct()">Add Product</button>
+        <button onclick="closeAdminPage()">Go to Shop Page</button>
+        <button onclick="showAnalytics()">Show Analytics</button>
+        <p id="analytics-data"></p>
+    </div>
+    
+    <div class="store-container" id="store-container"></div>
+    
+    <div class="cart">
+        <h2>Shopping Cart</h2>
+        <ul id="cart-items"></ul>
+        <p>Total: $<span id="total">0</span></p>
+        <div id="paypal-button-container"></div>
+    </div>
+    
+    <script src="https://www.paypal.com/sdk/js?client-id=AQqGdlpffTMG3Js0xAewtvTzTHGwmSYl8bLXBn_Tgq8DVi15yImI7RyNrumXh-AsE1P4LtFdan_bjjqf&components=buttons"></script>
+
+    <script>
+        let cart = [];
+        let products = [];
+        let analytics = {
+            views: 0,
+            addToCart: 0,
+            purchases: 0,
+            revenue: 0, // Added revenue tracking
+        };
+
+        function trackEvent(event) {
+            if (event === "view") {
+                analytics.views++;
+            } else if (event === "addToCart") {
+                analytics.addToCart++;
+            } else if (event === "purchase") {
+                analytics.purchases++;
+            }
+            console.log("Analytics Data:", analytics);
+        }
+
+        function addToCart(name, price) {
+            cart.push({ name, price });
+            updateCart();
+            trackEvent("addToCart");
+        }
+
+        function updateCart() {
+            const cartList = document.getElementById('cart-items');
+            const totalPrice = document.getElementById('total');
+            cartList.innerHTML = '';
+            let total = 0;
+            cart.forEach(item => {
+                const li = document.createElement('li');
+                li.textContent = `${item.name} - $${item.price}`;
+                cartList.appendChild(li);
+                total += item.price;
+            });
+            totalPrice.textContent = total;
+        }
+
+        function openAdminPage() {
+            const password = prompt("Enter Admin Password:");
+            if (password === "Abraham 123") {
+                document.getElementById('admin-panel').style.display = 'block';
+            } else {
+                alert("Incorrect password!");
+            }
+        }
+
+        function closeAdminPage() {
+            document.getElementById('admin-panel').style.display = 'none';
+        }
+
+        function addProduct() {
+            const name = document.getElementById('product-name').value;
+            const price = document.getElementById('product-price').value;
+            const image = document.getElementById('product-image').value;
+            
+            if (name && price && image) {
+                products.push({ name, price, image });
+                displayProducts();
+                document.getElementById('product-name').value = '';
+                document.getElementById('product-price').value = '';
+                document.getElementById('product-image').value = '';
+            } else {
+                alert("Please fill all fields");
+            }
+        }
+
+        function displayProducts() {
+            const storeContainer = document.getElementById('store-container');
+            storeContainer.innerHTML = '';
+            
+            products.forEach(product => {
+                trackEvent("view");
+                
+                const productDiv = document.createElement('div');
+                productDiv.classList.add('product');
+                productDiv.innerHTML = `
+                    <img src="${product.image}" alt="${product.name}">
+                    <h2>${product.name}</h2>
+                    <p>Price: $${product.price}</p>
+                    <button onclick="addToCart('${product.name}', ${product.price})">Add to Cart</button>
+                `;
+                storeContainer.appendChild(productDiv);
+            });
+        }
+
+        function searchProducts() {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            const filteredProducts = products.filter(product => product.name.toLowerCase().includes(query));
+            
+            const storeContainer = document.getElementById('store-container');
+            storeContainer.innerHTML = '';
+            filteredProducts.forEach(product => {
+                const productDiv = document.createElement('div');
+                productDiv.classList.add('product');
+                productDiv.innerHTML = `
+                    <img src="${product.image}" alt="${product.name}">
+                    <h2>${product.name}</h2>
+                    <p>Price: $${product.price}</p>
+                    <button onclick="addToCart('${product.name}', ${product.price})">Add to Cart</button>
+                `;
+                storeContainer.appendChild(productDiv);
+            });
+        }
+
+        function showAnalytics() {
+            const analyticsData = document.getElementById('analytics-data');
+            analyticsData.textContent = `Views: ${analytics.views}, Add to Cart: ${analytics.addToCart}, Purchases: ${analytics.purchases}, Revenue: $${analytics.revenue.toFixed(2)}`;
+        }
+
+        // PayPal Button Integration
+        paypal.Buttons({
+            createOrder: function(data, actions) {
+                return actions.order.create({
+                    purchase_units: [{
+                        amount: {
+                            value: document.getElementById('total').textContent
+                        }
+                    }]
+                });
+            },
+            onApprove: function(data, actions) {
+                return actions.order.capture().then(function(details) {
+                    alert("Payment Successful! " + details.payer.name.given_name);
+                    analytics.purchases++;
+                    analytics.revenue += parseFloat(document.getElementById('total').textContent); // Update revenue after purchase
+                    showAnalytics(); // Update analytics after purchase
+                });
+            },
+            onError: function(err) {
+                alert("An error occurred: " + err);
+            }
+        }).render('#paypal-button-container');
+
+        // Cookie consent
+        function acceptCookies() {
+            // Save that the user has accepted cookies in localStorage
+            localStorage.setItem('cookiesAccepted', 'true');
+            
+            // Hide the cookie banner
+            document.getElementById('cookie-banner').style.display = 'none';
+            
+            // Show the profile form after accepting cookies
+            document.getElementById('profile-form').style.display = 'block';
+        }
+
+        // Check if cookies have already been accepted
+        window.onload = function() {
+            if (localStorage.getItem('cookiesAccepted') === 'true') {
+                // If cookies have already been accepted, hide the banner and show the profile form
+                document.getElementById('cookie-banner').style.display = 'none';
+                document.getElementById('profile-form').style.display = 'block';
+            } else {
+                // Otherwise, show the cookie banner
+                document.getElementById('cookie-banner').style.display = 'block';
+            }
+        };
+
+        // Save user details
+        document.getElementById('user-details-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const email = document.getElementById('user-email').value;
+            const phone = document.getElementById('user-phone').value;
+            const postal = document.getElementById('user-postal').value;
+            alert("Details saved!");
+            console.log("User Details:", { email, phone, postal });
+        });
+    </script>
+</body>
+</html>
